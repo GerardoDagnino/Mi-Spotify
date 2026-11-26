@@ -1,4 +1,4 @@
-const CLIENT_ID = '19e0ffc4837d4b70a501a244238086e3';
+const CLIENT_ID = 'acfd4245080049a9b62687d90f3317c4e';
 const REDIRECT_URI = window.location.hostname.endsWith('.github.io') && !window.location.pathname.endsWith('/')
   ? window.location.origin + window.location.pathname + '/'
   : window.location.origin + window.location.pathname;
