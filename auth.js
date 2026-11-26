@@ -35,6 +35,14 @@ async function sha256(text) {
 }
 
 async function login() {
+  await startLogin(SCOPES);
+}
+
+async function loginMinimal() {
+  await startLogin([]);
+}
+
+async function startLogin(scopes) {
   const verifier = randomString(64);
   const challenge = await sha256(verifier);
   const state = randomString(16);
@@ -44,12 +52,12 @@ async function login() {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: CLIENT_ID,
-    scope: SCOPES.join(' '),
     redirect_uri: REDIRECT_URI,
     state: state,
     code_challenge_method: 'S256',
     code_challenge: challenge
   });
+  if (scopes.length) params.set('scope', scopes.join(' '));
 
   window.location.href = 'https://accounts.spotify.com/authorize?' + params.toString();
 }
