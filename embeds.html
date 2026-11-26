@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Spotify - modo simple</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Mi Spotify (modo simple)</h1>
+    <a href="./">Volver al login</a>
+  </header>
+
+  <main>
+    <section id="login-screen">
+      <h2>Pega un enlace de Spotify</h2>
+      <p>Puede ser una playlist, álbum, canción, podcast o episodio de `open.spotify.com`.</p>
+      <input id="spotify-url" type="url" placeholder="https://open.spotify.com/playlist/..." />
+      <button id="add-btn" class="primary">Agregar</button>
+      <p id="embed-error" class="error"></p>
+    </section>
+
+    <div id="embeds"></div>
+  </main>
+
+  <script src="embeds.js?v=1"></script>
+</body>
+</html>

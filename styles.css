@@ -146,6 +146,37 @@ button.primary:hover {
   gap: 8px;
 }
 
+#spotify-url {
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 1px solid #535353;
+  background: #242424;
+  color: #ffffff;
+  width: min(520px, 100%);
+}
+
+#embeds {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+  margin: 24px auto;
+}
+
+.embed-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.embed-item button {
+  align-self: flex-end;
+}
+
+header a {
+  color: #1ed760;
+}
+
 @media (max-width: 700px) {
   #app-screen {
     grid-template-columns: 1fr;
