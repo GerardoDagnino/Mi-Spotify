@@ -1,5 +1,7 @@
 const CLIENT_ID = '19e0ffc4837d4b70a501a244238086e3';
-const REDIRECT_URI = window.location.origin + window.location.pathname;
+const REDIRECT_URI = window.location.hostname.endsWith('.github.io') && !window.location.pathname.endsWith('/')
+  ? window.location.origin + window.location.pathname + '/'
+  : window.location.origin + window.location.pathname;
 const SCOPES = [
   'playlist-read-private',
   'playlist-read-collaborative',
@@ -56,9 +58,10 @@ async function login() {
 function parseCallback() {
   const params = new URLSearchParams(window.location.search);
   if (params.has('error')) {
+    const raw = window.location.search;
     history.replaceState({}, document.title, window.location.pathname);
     const description = params.get('error_description');
-    throw new Error(params.get('error') + (description ? ': ' + description : ''));
+    throw new Error(params.get('error') + (description ? ': ' + description : '') + ' | callback: ' + raw);
   }
   const code = params.get('code');
   if (!code) return null;
