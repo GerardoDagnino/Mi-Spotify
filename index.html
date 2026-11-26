@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Spotify</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Mi Spotify</h1>
+    <div id="user-area"></div>
+  </header>
+
+  <main>
+    <section id="login-screen">
+      <h2>Escucha tu música desde tu propia página</h2>
+      <p>Redirect URI para esta página: <code id="redirect-uri"></code></p>
+      <p id="login-error" class="error"></p>
+      <button id="login-btn" class="primary">Entrar con Spotify</button>
+    </section>
+
+    <section id="app-screen" hidden>
+      <div class="playlists-panel">
+        <h2>Mis playlists</h2>
+        <div id="playlists"></div>
+      </div>
+      <div class="tracks-panel">
+        <h2 id="playlist-title">Selecciona una playlist</h2>
+        <div id="tracks"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="player-bar" hidden>
+    <div id="track-info">Ninguna canción en reproducción</div>
+    <div class="controls">
+      <button id="prev-btn">Anterior</button>
+      <button id="play-btn" class="primary">Reproducir</button>
+      <button id="next-btn">Siguiente</button>
+    </div>
+    <div id="device-info">Conectando…</div>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+</body>
+</html>
