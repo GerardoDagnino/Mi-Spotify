@@ -155,26 +155,190 @@ button.primary:hover {
   width: min(520px, 100%);
 }
 
-#embeds {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 720px;
-  margin: 24px auto;
+header {
+  background: linear-gradient(90deg, #15803d, #121212 55%);
 }
 
-.embed-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.embed-item button {
-  align-self: flex-end;
-}
-
-header a {
+header nav a {
   color: #1ed760;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+header nav a:hover {
+  text-decoration: underline;
+}
+
+body.light {
+  background: #f2f3f5;
+  color: #161616;
+}
+
+body.light header {
+  background: linear-gradient(90deg, #15803d, #242424 55%);
+}
+
+body.light input,
+body.light .add-card,
+body.light .embed-card {
+  color: #161616;
+}
+
+.embeds-page {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 32px 0 20px;
+}
+
+.hero h2 {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.hero p {
+  color: #b3b3b3;
+  margin: 0;
+}
+
+body.light .hero p,
+body.light .hint {
+  color: #555555;
+}
+
+.add-card {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 28px;
+}
+
+body.light .add-card {
+  background: #ffffff;
+  border-color: #dddddd;
+}
+
+.add-card label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.add-row {
+  display: flex;
+  gap: 10px;
+}
+
+#spotify-url {
+  flex: 1;
+  border-radius: 24px;
+}
+
+button.primary.small,
+button.small,
+button.ghost.small {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid #1ed760;
+  color: #1ed760;
+}
+
+button.ghost:hover {
+  background: rgba(30, 215, 96, 0.12);
+}
+
+.hint,
+.empty {
+  color: #b3b3b3;
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
+.embed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 22px;
+}
+
+.embed-card {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+body.light .embed-card {
+  background: #ffffff;
+  border-color: #dddddd;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.card-top h3 {
+  flex: 1;
+  font-size: 15px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  background: #1ed760;
+  color: #000000;
+  border-radius: 12px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.player-holder {
+  min-height: 152px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 700px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .add-row {
+    flex-direction: column;
+  }
+
+  .embed-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 700px) {

@@ -8,22 +8,35 @@
 </head>
 <body>
   <header>
-    <h1>Mi Spotify (modo simple)</h1>
-    <a href="./">Volver al login</a>
+    <h1>Mi Spotify</h1>
+    <nav>
+      <a href="./">Ir al login</a>
+    </nav>
   </header>
 
-  <main>
-    <section id="login-screen">
-      <h2>Pega un enlace de Spotify</h2>
-      <p>Puede ser una playlist, álbum, canción, podcast o episodio de `open.spotify.com`.</p>
-      <input id="spotify-url" type="url" placeholder="https://open.spotify.com/playlist/..." />
-      <button id="add-btn" class="primary">Agregar</button>
-      <p id="embed-error" class="error"></p>
+  <main class="embeds-page">
+    <section class="hero">
+      <div>
+        <h2>Escucha sin iniciar sesión</h2>
+        <p>Guarda playlists, álbumes, canciones o podcasts de Spotify y reprodúcelos aquí.</p>
+      </div>
+      <button id="theme-btn" class="ghost">Tema claro</button>
     </section>
 
-    <div id="embeds"></div>
+    <section class="add-card">
+      <label for="spotify-url">Enlace de Spotify</label>
+      <div class="add-row">
+        <input id="spotify-url" type="url" placeholder="https://open.spotify.com/playlist/..." />
+        <button id="add-btn" class="primary">Agregar</button>
+      </div>
+      <p id="embed-error" class="error"></p>
+      <p class="hint">El volumen se controla con el volumen del sistema: Spotify no lo permite en los reproductores incrustados.</p>
+    </section>
+
+    <div id="embeds" class="embed-grid"></div>
   </main>
 
-  <script src="embeds.js?v=1"></script>
+  <script src="embeds.js?v=2"></script>
+  <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
 </body>
 </html>
