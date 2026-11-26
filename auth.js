@@ -55,7 +55,11 @@ async function login() {
 
 function parseCallback() {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('error')) throw new Error(params.get('error'));
+  if (params.has('error')) {
+    history.replaceState({}, document.title, window.location.pathname);
+    const description = params.get('error_description');
+    throw new Error(params.get('error') + (description ? ': ' + description : ''));
+  }
   const code = params.get('code');
   if (!code) return null;
   const state = params.get('state');
