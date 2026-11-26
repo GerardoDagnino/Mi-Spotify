@@ -34,24 +34,26 @@ async function showApp() {
   document.getElementById('app-screen').hidden = false;
   document.getElementById('player-bar').hidden = false;
 
+  const userArea = document.getElementById('user-area');
+  userArea.innerHTML = '';
   try {
     const me = await api('/v1/me');
-    const userArea = document.getElementById('user-area');
-    userArea.innerHTML = '';
     const name = document.createElement('span');
     name.textContent = me.display_name || me.id;
-    const logoutButton = document.createElement('button');
-    logoutButton.textContent = 'Salir';
-    logoutButton.addEventListener('click', () => {
-      logout();
-      location.reload();
-    });
-    userArea.append(name, logoutButton);
-    await loadPlaylists();
+    userArea.appendChild(name);
   } catch (error) {
-    document.getElementById('login-error').textContent = error.message;
-    document.getElementById('login-screen').hidden = false;
+    const label = document.createElement('span');
+    label.textContent = 'Tu cuenta';
+    userArea.appendChild(label);
   }
+  const logoutButton = document.createElement('button');
+  logoutButton.textContent = 'Salir';
+  logoutButton.addEventListener('click', () => {
+    logout();
+    location.reload();
+  });
+  userArea.appendChild(logoutButton);
+  await loadPlaylists();
 }
 
 async function api(path, options = {}) {
