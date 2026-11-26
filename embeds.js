@@ -33,7 +33,7 @@ function saveEmbeds(embeds) {
 }
 
 function parseLink(value) {
-  const match = value.match(/open\.spotify\.com\/(playlist|album|track|show|episode)\/([A-Za-z0-9]+)/);
+  const match = value.match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|show|episode)\/([A-Za-z0-9]+)/);
   if (!match) return null;
   return { type: match[1], id: match[2], url: 'https://open.spotify.com/' + match[1] + '/' + match[2] };
 }
@@ -43,7 +43,7 @@ function addEmbed() {
   const parsed = parseLink(input.value.trim());
   const error = document.getElementById('embed-error');
   if (!parsed) {
-    error.textContent = 'Enlace no válido. Debe ser de open.spotify.com.';
+    error.textContent = 'Pega el enlace completo: https://open.spotify.com/album/... o /playlist/...';
     return;
   }
   error.textContent = '';
@@ -150,11 +150,10 @@ function renderControllers() {
   getEmbeds().forEach((item, index) => {
     const holder = document.getElementById('embed-' + index);
     if (!holder) return;
-    const theme = getTheme() === 'dark' ? '0' : '1';
     iframeApi.createController(holder, {
       width: '100%',
       height: item.type === 'track' ? '152' : '352',
-      url: item.url + '?theme=' + theme
+      url: item.url
     }, controller => {
       controllers.set(index, controller);
       controller.addListener('playback_update', event => {
