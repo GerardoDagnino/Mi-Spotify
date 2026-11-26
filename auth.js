@@ -1,4 +1,4 @@
-const CLIENT_ID = 'PEGAR_CLIENT_ID_AQUI';
+const CLIENT_ID = '19e0ffc4837d4b70a501a244238086e3';
 const REDIRECT_URI = window.location.origin + window.location.pathname;
 const SCOPES = [
   'playlist-read-private',
