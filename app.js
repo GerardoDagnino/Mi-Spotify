@@ -1,6 +1,8 @@
 let player = null;
 let deviceId = null;
 let currentContext = null;
+let shuffleState = false;
+let repeatState = 'off';
 
 window.onSpotifyWebPlaybackSDKReady = setupPlayer;
 
@@ -16,6 +18,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('next-btn').addEventListener('click', () => {
     if (player) player.nextTrack();
+  });
+  document.getElementById('shuffle-btn').addEventListener('click', toggleShuffle);
+  document.getElementById('repeat-btn').addEventListener('click', cycleRepeat);
+  document.getElementById('search-btn').addEventListener('click', searchTracks);
+  document.getElementById('search-input').addEventListener('keydown', event => {
+    if (event.key === 'Enter') searchTracks();
+  });
+  document.getElementById('volume').addEventListener('input', event => {
+    if (player) player.setVolume(Number(event.target.value) / 100);
   });
 
   try {
@@ -59,22 +70,28 @@ async function showApp() {
 
 async function api(path, options = {}) {
   const token = await getValidAccessToken();
-  const response = await fetch('https://api.spotify.com/v1' + path, {
-    ...options,
-    headers: {
-      'Authorization': 'Bearer ' + token,
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(options.headers || {})
-    }
-  });
+  if (!token) throw new Error('Sesión caducada: vuelve a entrar con Spotify.');
+  let response;
+  try {
+    response = await fetch('https://api.spotify.com/v1' + path, {
+      ...options,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.headers || {})
+      }
+    });
+  } catch (error) {
+    throw new Error('Fallo de red/CORS al llamar ' + path + ': ' + error.message);
+  }
   if (response.status === 204) return null;
   if (!response.ok) {
-    let detail = response.statusText;
+    let detail = response.status + ' ' + response.statusText;
     try {
       const body = await response.json();
       if (body.error && body.error.message) detail = body.error.message;
     } catch (error) {}
-    throw new Error(detail);
+    throw new Error(detail + ' (' + path + ')');
   }
   return response.json();
 }
@@ -107,26 +124,96 @@ async function loadTracks(playlist) {
   container.innerHTML = '';
   try {
     const data = await api('/v1/playlists/' + playlist.id + '/tracks?limit=100&fields=items(track(id,name,artists(name),uri)),total');
-    if (!data.items.length) {
+    const tracks = data.items.filter(item => item.track && item.track.uri).map(item => item.track);
+    if (!tracks.length) {
       container.textContent = 'Esta playlist está vacía.';
       return;
     }
-    data.items.forEach((item, index) => {
-      if (!item.track) return;
-      const row = document.createElement('div');
-      row.className = 'track';
-      const info = document.createElement('span');
-      const artists = item.track.artists.map(artist => artist.name).join(', ');
-      info.textContent = (index + 1) + '. ' + item.track.name + ' - ' + artists;
-      const play = document.createElement('button');
-      play.textContent = 'Reproducir';
-      play.addEventListener('click', () => playContext(currentContext, item.track.uri));
-      row.append(info, play);
-      container.appendChild(row);
+    tracks.forEach((track, index) => {
+      container.appendChild(createTrackRow(track, index + 1, () => playContext(currentContext, track.uri)));
     });
   } catch (error) {
     container.textContent = 'Error: ' + error.message;
   }
+}
+
+function createTrackRow(track, index, onPlay) {
+  const row = document.createElement('div');
+  row.className = 'track';
+  const info = document.createElement('span');
+  const artists = (track.artists || []).map(artist => artist.name).join(', ');
+  info.textContent = index + '. ' + track.name + ' - ' + artists;
+  const play = document.createElement('button');
+  play.textContent = 'Reproducir';
+  play.addEventListener('click', onPlay);
+  row.append(info, play);
+  return row;
+}
+
+async function searchTracks() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+  currentContext = null;
+  document.getElementById('playlist-title').textContent = 'Resultados para "' + query + '"';
+  const container = document.getElementById('tracks');
+  container.innerHTML = 'Buscando…';
+  try {
+    const data = await api('/v1/search?q=' + encodeURIComponent(query) + '&type=track&limit=20');
+    const tracks = data.tracks.items;
+    if (!tracks.length) {
+      container.textContent = 'No se encontraron canciones.';
+      return;
+    }
+    container.innerHTML = '';
+    tracks.forEach((track, index) => {
+      container.appendChild(createTrackRow(track, index + 1, () => playUris([track.uri])));
+    });
+  } catch (error) {
+    container.textContent = 'Error: ' + error.message;
+  }
+}
+
+async function playUris(uris) {
+  if (!deviceId) {
+    document.getElementById('device-info').textContent = 'El reproductor aún no está listo.';
+    return;
+  }
+  await api('/v1/me/player/play?device_id=' + encodeURIComponent(deviceId), {
+    method: 'PUT',
+    body: JSON.stringify({ uris: uris })
+  });
+}
+
+async function toggleShuffle() {
+  shuffleState = !shuffleState;
+  updatePlaybackButtons();
+  try {
+    await api('/v1/me/player/shuffle?state=' + shuffleState, { method: 'PUT' });
+  } catch (error) {
+    shuffleState = !shuffleState;
+    updatePlaybackButtons();
+    setDeviceInfo(error.message);
+  }
+}
+
+async function cycleRepeat() {
+  const states = ['off', 'context', 'track'];
+  const next = states[(states.indexOf(repeatState) + 1) % states.length];
+  repeatState = next;
+  updatePlaybackButtons();
+  try {
+    await api('/v1/me/player/repeat?state=' + next, { method: 'PUT' });
+  } catch (error) {
+    repeatState = states[(states.indexOf(repeatState) - 1 + states.length) % states.length];
+    updatePlaybackButtons();
+    setDeviceInfo(error.message);
+  }
+}
+
+function updatePlaybackButtons() {
+  document.getElementById('shuffle-btn').textContent = 'Aleatorio: ' + (shuffleState ? 'sí' : 'no');
+  const labels = { off: 'no', context: 'playlist', track: 'canción' };
+  document.getElementById('repeat-btn').textContent = 'Repetir: ' + labels[repeatState];
 }
 
 async function playContext(contextUri, trackUri) {
@@ -171,11 +258,16 @@ function setupPlayer() {
     const track = state.track_window.current_track;
     document.getElementById('track-info').textContent = track.name + ' - ' + track.artists[0].name;
     document.getElementById('play-btn').textContent = state.paused ? 'Reproducir' : 'Pausar';
+    shuffleState = !!state.shuffle;
+    repeatState = state.repeat_mode || 'off';
+    updatePlaybackButtons();
   });
 
   ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach(event => {
     player.addListener(event, error => setDeviceInfo(error.message || event));
   });
 
+  player.setVolume(0.8);
+  updatePlaybackButtons();
   player.connect();
 }

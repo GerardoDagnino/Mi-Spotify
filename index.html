@@ -28,6 +28,10 @@
         <div id="playlists"></div>
       </div>
       <div class="tracks-panel">
+        <div class="search-row">
+          <input id="search-input" type="search" placeholder="Buscar canciones en Spotify" />
+          <button id="search-btn">Buscar</button>
+        </div>
         <h2 id="playlist-title">Selecciona una playlist</h2>
         <div id="tracks"></div>
       </div>
@@ -37,15 +41,18 @@
   <footer id="player-bar" hidden>
     <div id="track-info">Ninguna canción en reproducción</div>
     <div class="controls">
+      <button id="shuffle-btn" title="Reproducción aleatoria">Aleatorio: no</button>
       <button id="prev-btn">Anterior</button>
       <button id="play-btn" class="primary">Reproducir</button>
       <button id="next-btn">Siguiente</button>
+      <button id="repeat-btn" title="Repetir canción o playlist">Repetir: no</button>
     </div>
+    <label class="volume">Volumen <input id="volume" type="range" min="0" max="100" value="80" /></label>
     <div id="device-info">Conectando…</div>
   </footer>
 
   <script src="auth.js?v=9"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>
 </html>
