@@ -112,7 +112,11 @@ async function loadPlaylists() {
       const button = document.createElement('button');
       button.className = 'playlist-item';
       button.textContent = item.name;
-      button.addEventListener('click', () => loadTracks(item));
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.playlist-item.active').forEach(active => active.classList.remove('active'));
+        button.classList.add('active');
+        loadTracks(item);
+      });
       container.appendChild(button);
     }
   } catch (error) {
@@ -126,8 +130,8 @@ async function loadTracks(playlist) {
   const container = document.getElementById('tracks');
   container.innerHTML = '';
   try {
-    const data = await api('/v1/playlists/' + playlist.id + '/tracks?limit=100&fields=items(track(id,name,artists(name),uri)),total');
-    const tracks = data.items.filter(item => item.track && item.track.uri).map(item => item.track);
+    const data = await api('/v1/playlists/' + encodeURIComponent(playlist.id) + '/items?limit=50&fields=items(item(id,name,artists(name),uri,album(name,images),duration_ms)),total');
+    const tracks = data.items.map(row => asTrack(row.item) || asTrack(row.track)).filter(Boolean);
     if (!tracks.length) {
       container.textContent = 'Esta playlist está vacía.';
       return;
@@ -140,17 +144,56 @@ async function loadTracks(playlist) {
   }
 }
 
+function createSection(title) {
+  const heading = document.createElement('h3');
+  heading.className = 'result-section';
+  heading.textContent = title;
+  return heading;
+}
+
+function asTrack(value) {
+  return value && typeof value === 'object' && value.uri ? value : null;
+}
+
 function createTrackRow(track, index, onPlay) {
   const row = document.createElement('div');
   row.className = 'track';
-  const info = document.createElement('span');
+
+  const number = document.createElement('span');
+  number.className = 'track-index';
+  number.textContent = index;
+
+  const art = document.createElement('img');
+  art.className = 'track-art';
+  art.alt = '';
+  const images = (track.album && track.album.images) || track.images || [];
+  if (images.length) art.src = images[images.length - 1].url;
+
+  const info = document.createElement('div');
+  info.className = 'track-info-row';
+  const title = document.createElement('strong');
+  title.textContent = track.name;
+  const subtitle = document.createElement('small');
   const artists = (track.artists || []).map(artist => artist.name).join(', ');
-  info.textContent = index + '. ' + track.name + ' - ' + artists;
+  subtitle.textContent = artists || (track.album && track.album.name) || 'Spotify';
+  info.append(title, subtitle);
+
+  const duration = document.createElement('span');
+  duration.className = 'track-duration';
+  duration.textContent = track.duration_ms ? formatTime(track.duration_ms) : '';
+
   const play = document.createElement('button');
+  play.className = 'small';
   play.textContent = 'Reproducir';
   play.addEventListener('click', onPlay);
-  row.append(info, play);
+
+  row.append(number, art, info, duration, play);
   return row;
+}
+
+function formatTime(ms) {
+  const total = Math.floor(ms / 1000);
+  return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
 }
 
 async function searchTracks() {
@@ -161,16 +204,45 @@ async function searchTracks() {
   const container = document.getElementById('tracks');
   container.innerHTML = 'Buscando…';
   try {
-    const data = await api('/v1/search?q=' + encodeURIComponent(query) + '&type=track&limit=20');
+    const data = await api('/v1/search?q=' + encodeURIComponent(query) + '&type=track,album,artist&limit=10');
     const tracks = data.tracks.items;
-    if (!tracks.length) {
-      container.textContent = 'No se encontraron canciones.';
+    const albums = data.albums.items;
+    const artists = data.artists.items;
+    if (!tracks.length && !albums.length && !artists.length) {
+      container.textContent = 'No se encontraron resultados.';
       return;
     }
     container.innerHTML = '';
-    tracks.forEach((track, index) => {
-      container.appendChild(createTrackRow(track, index + 1, () => playUris([track.uri])));
-    });
+
+    if (tracks.length) {
+      container.appendChild(createSection('Canciones'));
+      tracks.forEach((track, index) => {
+        container.appendChild(createTrackRow(track, index + 1, () => playUris([track.uri])));
+      });
+    }
+    if (albums.length) {
+      container.appendChild(createSection('Álbumes'));
+      albums.forEach((album, index) => {
+        container.appendChild(createTrackRow({
+          name: album.name,
+          artists: album.artists,
+          album: { images: album.images },
+          uri: album.uri
+        }, index + 1, () => playContext(album.uri)));
+      });
+    }
+    if (artists.length) {
+      container.appendChild(createSection('Artistas'));
+      artists.forEach((artist, index) => {
+        const row = createTrackRow({ name: artist.name, uri: artist.uri }, index + 1, () => {
+          document.getElementById('search-input').value = artist.name;
+          searchTracks();
+        });
+        row.querySelector('.track-info-row small').textContent = 'Artista';
+        row.querySelector('button').textContent = 'Buscar';
+        container.appendChild(row);
+      });
+    }
   } catch (error) {
     container.textContent = 'Error: ' + error.message;
   }
