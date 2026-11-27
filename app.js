@@ -119,12 +119,12 @@ async function loadPlaylists() {
   const container = document.getElementById('playlists');
   container.innerHTML = '';
   try {
-    const data = await api('/v1/me/playlists?limit=50');
-    if (!data.items.length) {
+    const items = await loadAllPlaylists();
+    if (!items.length) {
       container.textContent = 'No tienes playlists.';
       return;
     }
-    for (const item of data.items) {
+    for (const item of items) {
       const button = document.createElement('button');
       button.className = 'playlist-item';
       button.textContent = item.name;
@@ -138,6 +138,19 @@ async function loadPlaylists() {
   } catch (error) {
     container.textContent = 'Error: ' + error.message;
   }
+}
+
+async function loadAllPlaylists() {
+  const all = [];
+  let offset = 0;
+  while (true) {
+    const data = await api('/v1/me/playlists?limit=50&offset=' + offset);
+    const rows = data.items || [];
+    all.push(...rows);
+    if (!data.next || rows.length < 50) break;
+    offset += rows.length;
+  }
+  return all;
 }
 
 async function loadAllPlaylistItems(playlistId, container) {
@@ -173,7 +186,9 @@ async function loadTracks(playlist) {
       container.appendChild(createTrackRow(track, index + 1, () => playContext(currentContext, track.uri)));
     });
   } catch (error) {
-    container.textContent = 'Error: ' + error.message;
+    container.textContent = error.message.includes('403')
+      ? 'Spotify solo permite ver el contenido de playlists que creaste o donde eres colaborador.'
+      : 'Error: ' + error.message;
   }
 }
 
