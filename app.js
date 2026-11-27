@@ -85,7 +85,7 @@ async function api(path, options = {}) {
       }
     });
   } catch (error) {
-    throw new Error('Fallo de red/CORS al llamar ' + path + ': ' + error.message);
+    throw new Error('Fallo de red/CORS en ' + url + ': ' + error.message);
   }
   if (response.status === 204) return null;
   if (!response.ok) {
