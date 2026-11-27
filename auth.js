@@ -1,6 +1,6 @@
 const CLIENT_ID = 'acfd4245080049a9b62687d90f3317c4';
-const REDIRECT_URI = window.location.hostname.endsWith('.github.io') && !window.location.pathname.endsWith('/')
-  ? window.location.origin + window.location.pathname + '/'
+const REDIRECT_URI = window.location.hostname.endsWith('.github.io')
+  ? 'https://GerardoDagnino.github.io/Mi-Spotify/'
   : window.location.origin + window.location.pathname;
 const SCOPES = [
   'playlist-read-private',
