@@ -73,7 +73,10 @@ async function api(path, options = {}) {
   if (!token) throw new Error('Sesión caducada: vuelve a entrar con Spotify.');
   let response;
   try {
-    response = await fetch('https://api.spotify.com/v1' + path, {
+    const url = path === '/v1' || path.startsWith('/v1/')
+      ? 'https://api.spotify.com' + path
+      : 'https://api.spotify.com/v1' + path;
+    response = await fetch(url, {
       ...options,
       headers: {
         'Authorization': 'Bearer ' + token,
