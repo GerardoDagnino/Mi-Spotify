@@ -4,22 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mi Spotify</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
   <header>
-    <h1>Mi Spotify</h1>
+    <div class="brand">
+      <span class="brand-mark">S</span>
+      <h1>Mi Spotify</h1>
+    </div>
+    <nav><a href="./embeds.html">Modo simple</a></nav>
     <div id="user-area"></div>
   </header>
 
   <main>
     <section id="login-screen">
-      <h2>Escucha tu música desde tu propia página</h2>
-      <p>Redirect URI para esta página: <code id="redirect-uri"></code></p>
-      <p id="login-error" class="error"></p>
-      <button id="login-btn" class="primary">Entrar con Spotify</button>
-      <p><button id="login-minimal-btn">Probar sin permisos</button></p>
-      <p><a href="./embeds.html">Escuchar sin iniciar sesión</a></p>
+      <div class="login-card">
+        <p class="eyebrow">TU MÚSICA · TU PÁGINA</p>
+        <h2>Tu biblioteca de Spotify, en un solo lugar</h2>
+        <p class="login-intro">Entra con tu cuenta para ver tus playlists, buscar canciones y reproducirlas con la calidad de Spotify.</p>
+        <button id="login-btn" class="primary login-primary">Entrar con Spotify</button>
+        <div class="login-divider"><span>o prueba primero</span></div>
+        <div class="login-alternatives">
+          <button id="login-minimal-btn" class="ghost">Probar sin permisos</button>
+          <a class="ghost-link" href="./embeds.html">Escuchar sin iniciar sesión</a>
+        </div>
+        <p id="login-error" class="error"></p>
+        <details class="redirect-help">
+          <summary>Ver Redirect URI</summary>
+          <code id="redirect-uri"></code>
+        </details>
+      </div>
     </section>
 
     <section id="app-screen" hidden>
@@ -48,14 +62,16 @@
       </div>
     </div>
     <div class="controls">
-      <button id="shuffle-btn" title="Reproducción aleatoria">Aleatorio: no</button>
-      <button id="prev-btn">Anterior</button>
-      <button id="play-btn" class="primary">Reproducir</button>
-      <button id="next-btn">Siguiente</button>
-      <button id="repeat-btn" title="Repetir canción o playlist">Repetir: no</button>
+      <button id="shuffle-btn" class="control-btn" title="Reproducción aleatoria">Aleatorio: no</button>
+      <button id="prev-btn" class="control-btn">Anterior</button>
+      <button id="play-btn" class="primary play-button">Reproducir</button>
+      <button id="next-btn" class="control-btn">Siguiente</button>
+      <button id="repeat-btn" class="control-btn" title="Repetir canción o playlist">Repetir: no</button>
     </div>
-    <label class="volume">Volumen <input id="volume" type="range" min="0" max="100" value="80" /></label>
-    <div id="device-info">Conectando…</div>
+    <div class="volume-area">
+      <label class="volume"><span>Volumen</span><input id="volume" type="range" min="0" max="100" value="80" /></label>
+      <div id="device-info">Conectando…</div>
+    </div>
   </footer>
 
   <script src="auth.js?v=9"></script>
