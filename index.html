@@ -39,7 +39,14 @@
   </main>
 
   <footer id="player-bar" hidden>
-    <div id="track-info">Ninguna canción en reproducción</div>
+    <div class="now-playing">
+      <div id="track-info">Ninguna canción en reproducción</div>
+      <div class="progress-row">
+        <span id="current-time">0:00</span>
+        <input id="progress" type="range" min="0" max="100" value="0" aria-label="Progreso de la canción" />
+        <span id="duration-time">0:00</span>
+      </div>
+    </div>
     <div class="controls">
       <button id="shuffle-btn" title="Reproducción aleatoria">Aleatorio: no</button>
       <button id="prev-btn">Anterior</button>
@@ -52,7 +59,7 @@
   </footer>
 
   <script src="auth.js?v=9"></script>
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>
 </html>

@@ -214,6 +214,33 @@ button.primary:hover {
   padding: 0 32px;
 }
 
+.now-playing {
+  min-width: 0;
+}
+
+#track-info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: #b3b3b3;
+  font-size: 12px;
+}
+
+.progress-row input {
+  flex: 1;
+  min-width: 60px;
+  max-width: 320px;
+  accent-color: #1ed760;
+  cursor: pointer;
+}
+
 #device-info {
   text-align: right;
   color: #b3b3b3;

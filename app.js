@@ -3,6 +3,7 @@ let deviceId = null;
 let currentContext = null;
 let shuffleState = false;
 let repeatState = 'off';
+let seeking = false;
 
 window.onSpotifyWebPlaybackSDKReady = setupPlayer;
 
@@ -28,6 +29,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('volume').addEventListener('input', event => {
     if (player) player.setVolume(Number(event.target.value) / 100);
   });
+  document.getElementById('progress').addEventListener('input', event => {
+    seeking = true;
+    document.getElementById('current-time').textContent = formatTime(Number(event.target.value));
+  });
+  document.getElementById('progress').addEventListener('change', event => {
+    if (player) player.seek(Number(event.target.value)).catch(error => setDeviceInfo(error.message));
+    seeking = false;
+  });
+  setInterval(updateProgressFromPlayer, 1000);
 
   try {
     const code = parseCallback();
@@ -88,15 +98,21 @@ async function api(path, options = {}) {
     throw new Error('Fallo de red/CORS en ' + url + ': ' + error.message);
   }
   if (response.status === 204) return null;
+  const text = await response.text();
   if (!response.ok) {
     let detail = response.status + ' ' + response.statusText;
     try {
-      const body = await response.json();
+      const body = JSON.parse(text);
       if (body.error && body.error.message) detail = body.error.message;
     } catch (error) {}
     throw new Error(detail + ' (' + path + ')');
   }
-  return response.json();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return text;
+  }
 }
 
 async function loadPlaylists() {
@@ -194,6 +210,23 @@ function createTrackRow(track, index, onPlay) {
 function formatTime(ms) {
   const total = Math.floor(ms / 1000);
   return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
+}
+
+function updateProgress(position, duration) {
+  if (seeking) return;
+  const bar = document.getElementById('progress');
+  bar.max = Math.max(duration || 0, 1);
+  bar.value = position || 0;
+  document.getElementById('current-time').textContent = formatTime(position || 0);
+  document.getElementById('duration-time').textContent = formatTime(duration || 0);
+}
+
+async function updateProgressFromPlayer() {
+  if (!player) return;
+  try {
+    const state = await player.getCurrentState();
+    if (state) updateProgress(state.position, state.duration);
+  } catch (error) {}
 }
 
 async function searchTracks() {
@@ -333,6 +366,7 @@ function setupPlayer() {
     const track = state.track_window.current_track;
     document.getElementById('track-info').textContent = track.name + ' - ' + track.artists[0].name;
     document.getElementById('play-btn').textContent = state.paused ? 'Reproducir' : 'Pausar';
+    updateProgress(state.position, state.duration);
     shuffleState = !!state.shuffle;
     repeatState = state.repeat_mode || 'off';
     updatePlaybackButtons();
