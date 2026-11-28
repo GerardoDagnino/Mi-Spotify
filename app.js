@@ -6,6 +6,9 @@ let repeatState = 'off';
 let seeking = false;
 let repeatRestarting = false;
 let localCatalog = null;
+let currentPaused = true;
+let currentPosition = 0;
+let currentDuration = 0;
 const OWNER_EMAIL = 'gerardoangecala@gmail.com';
 const OWNER_KEY = 'mi_spotify_owner';
 const DEFAULT_PROXY = 'https://flat-poetry-5513.gerardoangecala.workers.dev';
@@ -569,6 +572,57 @@ function setDeviceInfo(message) {
   document.getElementById('device-info').textContent = message;
 }
 
+function setupMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const handlers = {
+    play: () => { if (currentPaused) player.togglePlay(); },
+    pause: () => { if (!currentPaused) player.togglePlay(); },
+    previoustrack: () => player.previousTrack(),
+    nexttrack: () => player.nextTrack(),
+    seekto: details => {
+      if (typeof details.seekTime === 'number') player.seek(details.seekTime * 1000);
+    },
+    seekbackward: () => player.seek(Math.max(0, currentPosition - 10000)),
+    seekforward: () => player.seek(Math.min(currentDuration, currentPosition + 10000))
+  };
+  for (const [action, handler] of Object.entries(handlers)) {
+    try {
+      navigator.mediaSession.setActionHandler(action, handler);
+    } catch (error) {}
+  }
+}
+
+function updateMediaSession(track, state) {
+  if (!('mediaSession' in navigator)) return;
+  currentPaused = !!state.paused;
+  currentPosition = state.position || 0;
+  currentDuration = state.duration || 0;
+  if ('MediaMetadata' in window) {
+    const artwork = (track.album && track.album.images) || [];
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.name,
+      artist: (track.artists || []).map(artist => artist.name).join(', '),
+      album: (track.album && track.album.name) || '',
+      artwork: artwork.map(image => ({
+        src: image.url,
+        sizes: (image.width && image.height) ? image.width + 'x' + image.height : '300x300',
+        type: 'image/jpeg'
+      }))
+    });
+  }
+  navigator.mediaSession.playbackState = currentPaused ? 'paused' : 'playing';
+  if (currentDuration > 0) {
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: currentDuration / 1000,
+        position: Math.min(currentPosition, currentDuration) / 1000,
+        playbackRate: 1
+      });
+    } catch (error) {}
+  }
+  document.title = track.name + ' - Mi Spotify';
+}
+
 function setupPlayer() {
   player = new Spotify.Player({
     name: 'Mi Spotify en GitHub',
@@ -577,6 +631,8 @@ function setupPlayer() {
     },
     volume: 0.8
   });
+
+  setupMediaSession();
 
   player.addListener('ready', event => {
     deviceId = event.device_id;
@@ -597,6 +653,7 @@ function setupPlayer() {
     updateProgress(state.position, state.duration);
     shuffleState = !!state.shuffle;
     updatePlaybackButtons();
+    updateMediaSession(track, state);
     handleTrackRepeat(state);
   });
 
