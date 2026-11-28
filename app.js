@@ -6,6 +6,10 @@ let repeatState = 'off';
 let seeking = false;
 let localCatalog = null;
 
+function isForbidden(error) {
+  return /403|Forbidden/i.test(error.message || '');
+}
+
 function cacheGet(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -52,7 +56,7 @@ async function exportCatalog() {
       try {
         rows = await loadAllPlaylistItems(playlist.id, document.getElementById('tracks'));
       } catch (error) {
-        if (error.message.includes('403')) restricted = true;
+        if (isForbidden(error)) restricted = true;
         else throw error;
       }
       catalog.playlists.push({
@@ -275,7 +279,7 @@ async function loadTracks(playlist) {
       }
       rows = (saved && saved.tracks || []).map(track => ({ item: track }));
     }
-    if (!rows.length && error.message.includes('403')) {
+    if (!rows.length && isForbidden(error)) {
       container.textContent = 'Spotify solo permite ver el contenido de playlists que creaste o donde eres colaborador.';
       return;
     }
