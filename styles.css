@@ -214,6 +214,26 @@ button.ghost:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.owner-help {
+  margin: 18px 0 0;
+}
+
+.text-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #9a9a9a;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.text-btn:hover {
+  background: transparent;
+  color: #1ed760;
+}
+
 .redirect-help {
   margin-top: 26px;
   color: #777777;

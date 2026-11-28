@@ -5,9 +5,33 @@ let shuffleState = false;
 let repeatState = 'off';
 let seeking = false;
 let localCatalog = null;
+const OWNER_EMAIL = 'gerardoangecala@gmail.com';
+const OWNER_KEY = 'mi_spotify_owner';
+
+function isOwnerBrowser() {
+  return localStorage.getItem(OWNER_KEY) === OWNER_EMAIL;
+}
 
 function isForbidden(error) {
   return /403|Forbidden/i.test(error.message || '');
+}
+
+function activateOwner() {
+  const email = prompt('Correo de Spotify para activar el catálogo en este navegador:');
+  if (!email) return;
+  if (email.trim().toLowerCase() === OWNER_EMAIL) {
+    localStorage.setItem(OWNER_KEY, OWNER_EMAIL);
+    alert('Catálogo activado en este navegador.');
+  } else {
+    alert('El correo no coincide con el dueño de la página.');
+  }
+}
+
+function showRestrictedNotice(container) {
+  const notice = document.createElement('div');
+  notice.className = 'offline-notice';
+  notice.textContent = 'Esta red bloquea api.spotify.com. El catálogo guardado solo está activo en el navegador de ' + OWNER_EMAIL + '.';
+  container.prepend(notice);
 }
 
 function cacheGet(key, fallback) {
@@ -33,6 +57,7 @@ function showOfflineNotice(container, message) {
 }
 
 async function getLocalCatalog() {
+  if (!isOwnerBrowser()) return { playlists: [] };
   if (localCatalog) return localCatalog;
   try {
     const response = await fetch('catalog.json?v=2');
@@ -101,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('shuffle-btn').addEventListener('click', toggleShuffle);
   document.getElementById('repeat-btn').addEventListener('click', cycleRepeat);
   document.getElementById('export-btn').addEventListener('click', exportCatalog);
+  document.getElementById('owner-btn').addEventListener('click', activateOwner);
   document.getElementById('search-btn').addEventListener('click', searchTracks);
   document.getElementById('search-input').addEventListener('keydown', event => {
     if (event.key === 'Enter') searchTracks();
@@ -139,6 +165,9 @@ async function showApp() {
   userArea.innerHTML = '';
   try {
     const me = await api('/v1/me');
+    if (me.email && me.email.toLowerCase() === OWNER_EMAIL) {
+      localStorage.setItem(OWNER_KEY, OWNER_EMAIL);
+    }
     const name = document.createElement('span');
     name.textContent = me.display_name || me.id;
     userArea.appendChild(name);
@@ -202,12 +231,13 @@ async function loadPlaylists() {
     items = await loadAllPlaylists();
     cacheSet('spotify_playlists', items);
   } catch (error) {
-    items = cacheGet('spotify_playlists', []);
+    items = isOwnerBrowser() ? cacheGet('spotify_playlists', []) : [];
     if (!items.length) {
       const catalog = await getLocalCatalog();
       items = catalog.playlists || [];
     }
-    showOfflineNotice(container, error.message);
+    if (isOwnerBrowser()) showOfflineNotice(container, error.message);
+    else showRestrictedNotice(container);
   }
   try {
     if (!items.length) {
@@ -269,7 +299,7 @@ async function loadTracks(playlist) {
     rows = await loadAllPlaylistItems(playlist.id, container);
     cacheSet('spotify_tracks_' + playlist.id, rows);
   } catch (error) {
-    rows = cacheGet('spotify_tracks_' + playlist.id, []);
+    rows = isOwnerBrowser() ? cacheGet('spotify_tracks_' + playlist.id, []) : [];
     if (!rows.length) {
       const catalog = await getLocalCatalog();
       const saved = (catalog.playlists || []).find(item => item.id === playlist.id);
@@ -283,7 +313,8 @@ async function loadTracks(playlist) {
       container.textContent = 'Spotify solo permite ver el contenido de playlists que creaste o donde eres colaborador.';
       return;
     }
-    showOfflineNotice(container, error.message);
+    if (isOwnerBrowser()) showOfflineNotice(container, error.message);
+    else showRestrictedNotice(container);
   }
   const tracks = rows.map(row => asTrack(row.item) || asTrack(row.track)).filter(Boolean);
   if (!tracks.length) {
@@ -424,7 +455,11 @@ async function searchTracks() {
       }
     }
     container.innerHTML = '';
-    showOfflineNotice(container, 'búsqueda en el catálogo guardado');
+    if (isOwnerBrowser()) showOfflineNotice(container, 'búsqueda en el catálogo guardado');
+    else {
+      showRestrictedNotice(container);
+      return;
+    }
     if (!found.length) {
       container.appendChild(document.createTextNode('No hay resultados en el catálogo guardado.'));
       return;
