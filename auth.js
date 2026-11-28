@@ -39,10 +39,6 @@ async function login() {
   await startLogin(SCOPES);
 }
 
-async function loginMinimal() {
-  await startLogin([]);
-}
-
 async function startLogin(scopes) {
   const verifier = randomString(64);
   const challenge = await sha256(verifier);

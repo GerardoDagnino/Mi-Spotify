@@ -122,7 +122,6 @@ window.onSpotifyWebPlaybackSDKReady = setupPlayer;
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('redirect-uri').textContent = REDIRECT_URI;
   document.getElementById('login-btn').addEventListener('click', login);
-  document.getElementById('login-minimal-btn').addEventListener('click', loginMinimal);
   document.getElementById('play-btn').addEventListener('click', () => {
     if (player) player.togglePlay();
   });
