@@ -425,6 +425,17 @@ input[type="range"]::-moz-range-thumb {
   color: #ff6b6b;
 }
 
+.offline-notice {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  color: #ffd966;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 #player-bar {
   position: fixed;
   bottom: 0;

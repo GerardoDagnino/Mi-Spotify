@@ -5,6 +5,28 @@ let shuffleState = false;
 let repeatState = 'off';
 let seeking = false;
 
+function cacheGet(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function cacheSet(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {}
+}
+
+function showOfflineNotice(container, message) {
+  const notice = document.createElement('div');
+  notice.className = 'offline-notice';
+  notice.textContent = 'Modo sin conexión con la API: ' + message + '. Mostrando datos guardados en este navegador.';
+  container.prepend(notice);
+}
+
 window.onSpotifyWebPlaybackSDKReady = setupPlayer;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -81,11 +103,11 @@ async function showApp() {
 async function api(path, options = {}) {
   const token = await getValidAccessToken();
   if (!token) throw new Error('Sesión caducada: vuelve a entrar con Spotify.');
+  const url = path === '/v1' || path.startsWith('/v1/')
+    ? 'https://api.spotify.com' + path
+    : 'https://api.spotify.com/v1' + path;
   let response;
   try {
-    const url = path === '/v1' || path.startsWith('/v1/')
-      ? 'https://api.spotify.com' + path
-      : 'https://api.spotify.com/v1' + path;
     response = await fetch(url, {
       ...options,
       headers: {
@@ -95,7 +117,7 @@ async function api(path, options = {}) {
       }
     });
   } catch (error) {
-    throw new Error('Fallo de red/CORS en ' + url + ': ' + error.message);
+    throw new Error('No se pudo conectar con api.spotify.com (' + error.name + ': ' + error.message + '). Si es una red de trabajo, el firewall la está bloqueando.');
   }
   if (response.status === 204) return null;
   const text = await response.text();
@@ -118,8 +140,15 @@ async function api(path, options = {}) {
 async function loadPlaylists() {
   const container = document.getElementById('playlists');
   container.innerHTML = '';
+  let items;
   try {
-    const items = await loadAllPlaylists();
+    items = await loadAllPlaylists();
+    cacheSet('spotify_playlists', items);
+  } catch (error) {
+    items = cacheGet('spotify_playlists', []);
+    showOfflineNotice(container, error.message);
+  }
+  try {
     if (!items.length) {
       container.textContent = 'No tienes playlists.';
       return;
@@ -174,22 +203,27 @@ async function loadTracks(playlist) {
   document.getElementById('playlist-title').textContent = playlist.name;
   const container = document.getElementById('tracks');
   container.innerHTML = '';
+  let rows;
   try {
-    const rows = await loadAllPlaylistItems(playlist.id, container);
-    const tracks = rows.map(row => asTrack(row.item) || asTrack(row.track)).filter(Boolean);
-    if (!tracks.length) {
-      container.textContent = 'Esta playlist está vacía.';
+    rows = await loadAllPlaylistItems(playlist.id, container);
+    cacheSet('spotify_tracks_' + playlist.id, rows);
+  } catch (error) {
+    rows = cacheGet('spotify_tracks_' + playlist.id, []);
+    if (!rows.length && error.message.includes('403')) {
+      container.textContent = 'Spotify solo permite ver el contenido de playlists que creaste o donde eres colaborador.';
       return;
     }
-    container.innerHTML = '';
-    tracks.forEach((track, index) => {
-      container.appendChild(createTrackRow(track, index + 1, () => playContext(currentContext, track.uri)));
-    });
-  } catch (error) {
-    container.textContent = error.message.includes('403')
-      ? 'Spotify solo permite ver el contenido de playlists que creaste o donde eres colaborador.'
-      : 'Error: ' + error.message;
+    showOfflineNotice(container, error.message);
   }
+  const tracks = rows.map(row => asTrack(row.item) || asTrack(row.track)).filter(Boolean);
+  if (!tracks.length) {
+    container.textContent = 'No hay canciones disponibles para esta playlist.';
+    return;
+  }
+  container.innerHTML = '';
+  tracks.forEach((track, index) => {
+    container.appendChild(createTrackRow(track, index + 1, () => playContext(currentContext, track.uri)));
+  });
 }
 
 function createSection(title) {
