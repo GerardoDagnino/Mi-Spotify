@@ -4,6 +4,7 @@ let currentContext = null;
 let shuffleState = false;
 let repeatState = 'off';
 let seeking = false;
+let repeatRestarting = false;
 let localCatalog = null;
 const OWNER_EMAIL = 'gerardoangecala@gmail.com';
 const OWNER_KEY = 'mi_spotify_owner';
@@ -30,16 +31,6 @@ function activateOwner() {
   } else {
     alert('El correo no coincide con el dueño de la página.');
   }
-}
-
-function saveProxy() {
-  const value = document.getElementById('proxy-url').value.trim().replace(/\/$/, '');
-  if (!/^https:\/\//.test(value)) {
-    alert('Pega la URL completa del Worker, empezando por https://');
-    return;
-  }
-  localStorage.setItem('spotify_proxy', value);
-  alert('Proxy guardado en este navegador.');
 }
 
 function showRestrictedNotice(container) {
@@ -142,8 +133,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('repeat-btn').addEventListener('click', cycleRepeat);
   document.getElementById('export-btn').addEventListener('click', exportCatalog);
   document.getElementById('owner-btn').addEventListener('click', activateOwner);
-  document.getElementById('proxy-btn').addEventListener('click', saveProxy);
-  document.getElementById('proxy-url').value = getProxyUrl();
   document.getElementById('search-btn').addEventListener('click', searchTracks);
   document.getElementById('search-input').addEventListener('keydown', event => {
     if (event.key === 'Enter') searchTracks();
@@ -525,7 +514,7 @@ async function toggleShuffle() {
 }
 
 async function cycleRepeat() {
-  const states = ['off', 'context', 'track'];
+  const states = ['off', 'track', 'context'];
   const next = states[(states.indexOf(repeatState) + 1) % states.length];
   repeatState = next;
   updatePlaybackButtons();
@@ -536,6 +525,17 @@ async function cycleRepeat() {
     updatePlaybackButtons();
     setDeviceInfo(error.message);
   }
+}
+
+function handleTrackRepeat(state) {
+  if (repeatState !== 'track' || repeatRestarting) return;
+  if (!state.paused || !state.duration) return;
+  if (state.duration - state.position > 2500) return;
+  repeatRestarting = true;
+  player.seek(0)
+    .then(() => player.togglePlay())
+    .catch(error => setDeviceInfo(error.message))
+    .finally(() => setTimeout(() => { repeatRestarting = false; }, 800));
 }
 
 function updatePlaybackButtons() {
@@ -592,8 +592,8 @@ function setupPlayer() {
     document.getElementById('play-btn').textContent = state.paused ? 'Reproducir' : 'Pausar';
     updateProgress(state.position, state.duration);
     shuffleState = !!state.shuffle;
-    repeatState = state.repeat_mode || 'off';
     updatePlaybackButtons();
+    handleTrackRepeat(state);
   });
 
   ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach(event => {

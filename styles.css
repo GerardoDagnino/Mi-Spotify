@@ -234,35 +234,6 @@ button.ghost:hover {
   color: #1ed760;
 }
 
-.proxy-setup {
-  margin-top: 20px;
-  text-align: left;
-}
-
-.proxy-setup label {
-  display: block;
-  margin-bottom: 8px;
-  color: #9a9a9a;
-  font-size: 12px;
-}
-
-.proxy-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.proxy-row input {
-  flex: 1;
-  min-width: 0;
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-  font-size: 12px;
-}
-
 .redirect-help {
   margin-top: 26px;
   color: #777777;
