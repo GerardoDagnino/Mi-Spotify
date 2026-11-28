@@ -35,7 +35,7 @@ function showOfflineNotice(container, message) {
 async function getLocalCatalog() {
   if (localCatalog) return localCatalog;
   try {
-    const response = await fetch('catalog.json?v=1');
+    const response = await fetch('catalog.json?v=2');
     localCatalog = response.ok ? await response.json() : { playlists: [] };
   } catch (error) {
     localCatalog = { playlists: [] };
