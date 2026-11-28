@@ -12,6 +12,10 @@ function isOwnerBrowser() {
   return localStorage.getItem(OWNER_KEY) === OWNER_EMAIL;
 }
 
+function getProxyUrl() {
+  return (localStorage.getItem('spotify_proxy') || '').trim().replace(/\/$/, '');
+}
+
 function isForbidden(error) {
   return /403|Forbidden/i.test(error.message || '');
 }
@@ -25,6 +29,16 @@ function activateOwner() {
   } else {
     alert('El correo no coincide con el dueño de la página.');
   }
+}
+
+function saveProxy() {
+  const value = document.getElementById('proxy-url').value.trim().replace(/\/$/, '');
+  if (!/^https:\/\//.test(value)) {
+    alert('Pega la URL completa del Worker, empezando por https://');
+    return;
+  }
+  localStorage.setItem('spotify_proxy', value);
+  alert('Proxy guardado en este navegador.');
 }
 
 function showRestrictedNotice(container) {
@@ -127,6 +141,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('repeat-btn').addEventListener('click', cycleRepeat);
   document.getElementById('export-btn').addEventListener('click', exportCatalog);
   document.getElementById('owner-btn').addEventListener('click', activateOwner);
+  document.getElementById('proxy-btn').addEventListener('click', saveProxy);
+  document.getElementById('proxy-url').value = getProxyUrl();
   document.getElementById('search-btn').addEventListener('click', searchTracks);
   document.getElementById('search-input').addEventListener('keydown', event => {
     if (event.key === 'Enter') searchTracks();
@@ -192,18 +208,27 @@ async function api(path, options = {}) {
   const url = path === '/v1' || path.startsWith('/v1/')
     ? 'https://api.spotify.com' + path
     : 'https://api.spotify.com/v1' + path;
+  const init = {
+    ...options,
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.headers || {})
+    }
+  };
   let response;
   try {
-    response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(options.headers || {})
-      }
-    });
-  } catch (error) {
-    throw new Error('No se pudo conectar con api.spotify.com (' + error.name + ': ' + error.message + '). Si es una red de trabajo, el firewall la está bloqueando.');
+    response = await fetch(url, init);
+  } catch (directError) {
+    const proxy = getProxyUrl();
+    if (!proxy) {
+      throw new Error('No se pudo conectar con api.spotify.com (' + directError.name + ': ' + directError.message + '). Si es una red de trabajo, configura el proxy.');
+    }
+    try {
+      response = await fetch(proxy + '?url=' + encodeURIComponent(url), init);
+    } catch (proxyError) {
+      throw new Error('Firewall y proxy bloqueados: ' + proxyError.message);
+    }
   }
   if (response.status === 204) return null;
   const text = await response.text();
