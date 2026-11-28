@@ -353,7 +353,7 @@ function asTrack(value) {
   return value && typeof value === 'object' && value.uri ? value : null;
 }
 
-function createTrackRow(track, index, onPlay) {
+function createTrackRow(track, index, onPlay, actionLabel = 'Reproducir') {
   const row = document.createElement('div');
   row.className = 'track';
 
@@ -361,11 +361,21 @@ function createTrackRow(track, index, onPlay) {
   number.className = 'track-index';
   number.textContent = index;
 
+  const artButton = document.createElement('button');
+  artButton.className = 'track-art-button';
+  artButton.title = actionLabel;
+  artButton.setAttribute('aria-label', actionLabel);
+  artButton.addEventListener('click', onPlay);
+
   const art = document.createElement('img');
   art.className = 'track-art';
   art.alt = '';
   const images = (track.album && track.album.images) || track.images || [];
   if (images.length) art.src = images[images.length - 1].url;
+
+  const overlay = document.createElement('span');
+  overlay.className = 'track-play-overlay';
+  artButton.append(art, overlay);
 
   const info = document.createElement('div');
   info.className = 'track-info-row';
@@ -380,12 +390,7 @@ function createTrackRow(track, index, onPlay) {
   duration.className = 'track-duration';
   duration.textContent = track.duration_ms ? formatTime(track.duration_ms) : '';
 
-  const play = document.createElement('button');
-  play.className = 'small';
-  play.textContent = 'Reproducir';
-  play.addEventListener('click', onPlay);
-
-  row.append(number, art, info, duration, play);
+  row.append(number, artButton, info, duration);
   return row;
 }
 
@@ -452,9 +457,8 @@ async function searchTracks() {
         const row = createTrackRow({ name: artist.name, uri: artist.uri }, index + 1, () => {
           document.getElementById('search-input').value = artist.name;
           searchTracks();
-        });
+        }, 'Buscar artista');
         row.querySelector('.track-info-row small').textContent = 'Artista';
-        row.querySelector('button').textContent = 'Buscar';
         container.appendChild(row);
       });
     }
@@ -514,7 +518,7 @@ async function toggleShuffle() {
 }
 
 async function cycleRepeat() {
-  const states = ['off', 'track', 'context'];
+  const states = ['off', 'track'];
   const next = states[(states.indexOf(repeatState) + 1) % states.length];
   repeatState = next;
   updatePlaybackButtons();
@@ -540,7 +544,7 @@ function handleTrackRepeat(state) {
 
 function updatePlaybackButtons() {
   document.getElementById('shuffle-btn').textContent = 'Aleatorio: ' + (shuffleState ? 'sí' : 'no');
-  const labels = { off: 'no', context: 'playlist', track: 'canción' };
+  const labels = { off: 'no', track: 'canción' };
   document.getElementById('repeat-btn').textContent = 'Repetir: ' + labels[repeatState];
 }
 
