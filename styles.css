@@ -270,6 +270,13 @@ button.ghost:hover {
   letter-spacing: -0.4px;
 }
 
+.panel-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 #playlists,
 #tracks {
   display: flex;

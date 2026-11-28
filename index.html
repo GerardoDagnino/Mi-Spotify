@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mi Spotify</title>
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <header>
@@ -38,7 +38,10 @@
 
     <section id="app-screen" hidden>
       <div class="playlists-panel">
-        <h2>Mis playlists</h2>
+        <div class="panel-title">
+          <h2>Mis playlists</h2>
+          <button id="export-btn" class="small ghost" title="Descargar copia de tu biblioteca">Exportar</button>
+        </div>
         <div id="playlists"></div>
       </div>
       <div class="tracks-panel">
@@ -75,7 +78,7 @@
   </footer>
 
   <script src="auth.js?v=9"></script>
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
 </body>
 </html>

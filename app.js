@@ -4,6 +4,7 @@ let currentContext = null;
 let shuffleState = false;
 let repeatState = 'off';
 let seeking = false;
+let localCatalog = null;
 
 function cacheGet(key, fallback) {
   try {
@@ -27,6 +28,48 @@ function showOfflineNotice(container, message) {
   container.prepend(notice);
 }
 
+async function getLocalCatalog() {
+  if (localCatalog) return localCatalog;
+  try {
+    const response = await fetch('catalog.json?v=1');
+    localCatalog = response.ok ? await response.json() : { playlists: [] };
+  } catch (error) {
+    localCatalog = { playlists: [] };
+  }
+  return localCatalog;
+}
+
+async function exportCatalog() {
+  const button = document.getElementById('export-btn');
+  button.disabled = true;
+  button.textContent = 'Exportando…';
+  try {
+    const playlists = await loadAllPlaylists();
+    const catalog = { playlists: [] };
+    for (const playlist of playlists) {
+      const rows = await loadAllPlaylistItems(playlist.id, document.getElementById('tracks'));
+      catalog.playlists.push({
+        id: playlist.id,
+        name: playlist.name,
+        uri: playlist.uri,
+        tracks: rows.map(row => asTrack(row.item) || asTrack(row.track)).filter(Boolean)
+      });
+    }
+    const blob = new Blob([JSON.stringify(catalog, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'catalog.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    document.getElementById('device-info').textContent = 'Catálogo descargado: súbelo a GitHub como catalog.json';
+  } catch (error) {
+    document.getElementById('device-info').textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Exportar';
+  }
+}
+
 window.onSpotifyWebPlaybackSDKReady = setupPlayer;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -44,6 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('shuffle-btn').addEventListener('click', toggleShuffle);
   document.getElementById('repeat-btn').addEventListener('click', cycleRepeat);
+  document.getElementById('export-btn').addEventListener('click', exportCatalog);
   document.getElementById('search-btn').addEventListener('click', searchTracks);
   document.getElementById('search-input').addEventListener('keydown', event => {
     if (event.key === 'Enter') searchTracks();
@@ -146,6 +190,10 @@ async function loadPlaylists() {
     cacheSet('spotify_playlists', items);
   } catch (error) {
     items = cacheGet('spotify_playlists', []);
+    if (!items.length) {
+      const catalog = await getLocalCatalog();
+      items = catalog.playlists || [];
+    }
     showOfflineNotice(container, error.message);
   }
   try {
@@ -209,6 +257,11 @@ async function loadTracks(playlist) {
     cacheSet('spotify_tracks_' + playlist.id, rows);
   } catch (error) {
     rows = cacheGet('spotify_tracks_' + playlist.id, []);
+    if (!rows.length) {
+      const catalog = await getLocalCatalog();
+      const saved = (catalog.playlists || []).find(item => item.id === playlist.id);
+      rows = (saved && saved.tracks || []).map(track => ({ item: track }));
+    }
     if (!rows.length && error.message.includes('403')) {
       container.textContent = 'Spotify solo permite ver el contenido de playlists que creaste o donde eres colaborador.';
       return;
@@ -343,7 +396,26 @@ async function searchTracks() {
       });
     }
   } catch (error) {
-    container.textContent = 'Error: ' + error.message;
+    const catalog = await getLocalCatalog();
+    const found = [];
+    const needle = query.toLowerCase();
+    for (const playlist of catalog.playlists || []) {
+      for (const track of playlist.tracks || []) {
+        const artistNames = (track.artists || []).map(artist => artist.name).join(' ');
+        const haystack = (track.name + ' ' + artistNames + ' ' + ((track.album && track.album.name) || '')).toLowerCase();
+        if (haystack.includes(needle)) found.push(track);
+      }
+    }
+    container.innerHTML = '';
+    showOfflineNotice(container, 'búsqueda en el catálogo guardado');
+    if (!found.length) {
+      container.appendChild(document.createTextNode('No hay resultados en el catálogo guardado.'));
+      return;
+    }
+    container.appendChild(createSection('Canciones guardadas'));
+    found.slice(0, 100).forEach((track, index) => {
+      container.appendChild(createTrackRow(track, index + 1, () => playUris([track.uri])));
+    });
   }
 }
 
@@ -352,10 +424,14 @@ async function playUris(uris) {
     document.getElementById('device-info').textContent = 'El reproductor aún no está listo.';
     return;
   }
-  await api('/v1/me/player/play?device_id=' + encodeURIComponent(deviceId), {
-    method: 'PUT',
-    body: JSON.stringify({ uris: uris })
-  });
+  try {
+    await api('/v1/me/player/play?device_id=' + encodeURIComponent(deviceId), {
+      method: 'PUT',
+      body: JSON.stringify({ uris: uris })
+    });
+  } catch (error) {
+    setDeviceInfo('Red bloqueada: inicia la canción desde tu móvil eligiendo este navegador como dispositivo; luego usa los controles.');
+  }
 }
 
 async function toggleShuffle() {
@@ -397,10 +473,14 @@ async function playContext(contextUri, trackUri) {
   }
   const body = { context_uri: contextUri };
   if (trackUri) body.offset = { uri: trackUri };
-  await api('/v1/me/player/play?device_id=' + encodeURIComponent(deviceId), {
-    method: 'PUT',
-    body: JSON.stringify(body)
-  });
+  try {
+    await api('/v1/me/player/play?device_id=' + encodeURIComponent(deviceId), {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    });
+  } catch (error) {
+    setDeviceInfo('Red bloqueada: inicia la canción desde tu móvil eligiendo este navegador como dispositivo; luego usa los controles.');
+  }
 }
 
 function setDeviceInfo(message) {
