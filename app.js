@@ -47,13 +47,22 @@ async function exportCatalog() {
     const playlists = await loadAllPlaylists();
     const catalog = { playlists: [] };
     for (const playlist of playlists) {
-      const rows = await loadAllPlaylistItems(playlist.id, document.getElementById('tracks'));
+      let rows = [];
+      let restricted = false;
+      try {
+        rows = await loadAllPlaylistItems(playlist.id, document.getElementById('tracks'));
+      } catch (error) {
+        if (error.message.includes('403')) restricted = true;
+        else throw error;
+      }
       catalog.playlists.push({
         id: playlist.id,
         name: playlist.name,
         uri: playlist.uri,
+        restricted: restricted,
         tracks: rows.map(row => asTrack(row.item) || asTrack(row.track)).filter(Boolean)
       });
+      document.getElementById('device-info').textContent = 'Exportando… ' + catalog.playlists.length + '/' + playlists.length;
     }
     const blob = new Blob([JSON.stringify(catalog, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
@@ -260,6 +269,10 @@ async function loadTracks(playlist) {
     if (!rows.length) {
       const catalog = await getLocalCatalog();
       const saved = (catalog.playlists || []).find(item => item.id === playlist.id);
+      if (saved && saved.restricted) {
+        container.textContent = 'Spotify no permite exportar esta playlist: es de otro usuario.';
+        return;
+      }
       rows = (saved && saved.tracks || []).map(track => ({ item: track }));
     }
     if (!rows.length && error.message.includes('403')) {
