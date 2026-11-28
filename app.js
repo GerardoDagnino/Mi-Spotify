@@ -7,13 +7,14 @@ let seeking = false;
 let localCatalog = null;
 const OWNER_EMAIL = 'gerardoangecala@gmail.com';
 const OWNER_KEY = 'mi_spotify_owner';
+const DEFAULT_PROXY = 'https://flat-poetry-5513.gerardoangecala.workers.dev';
 
 function isOwnerBrowser() {
   return localStorage.getItem(OWNER_KEY) === OWNER_EMAIL;
 }
 
 function getProxyUrl() {
-  return (localStorage.getItem('spotify_proxy') || '').trim().replace(/\/$/, '');
+  return (localStorage.getItem('spotify_proxy') || DEFAULT_PROXY).trim().replace(/\/$/, '');
 }
 
 function isForbidden(error) {
